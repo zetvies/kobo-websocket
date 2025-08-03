@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Emoji Display</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        .status {
+            display: none;
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 40px;
+            user-select: none;
+            transition: transform 0.1s ease;
+            z-index: 100;
+        }
+
+        .emoji.boosted {
+            animation: boost 0.5s ease-out;
+        }
+
+        @keyframes boost {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="status" id="status">Connecting...</div>
+    <div id="emojiContainer"></div>
+
+    <script>
+        let ws;
+        const statusElement = document.getElementById('status');
+        const emojiContainer = document.getElementById('emojiContainer');
+
+        let activeConnections = 0;
+        let emojis = [];
+        let animationId;
+
+        // Emoji options
+        const emojiOptions = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠'];
+
+        function createEmoji() {
+            const emoji = document.createElement('div');
+            emoji.className = 'emoji';
+            emoji.textContent = emojiOptions[Math.floor(Math.random() * emojiOptions.length)];
+            
+            // Random initial position
+            emoji.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            emoji.style.top = Math.random() * (window.innerHeight - 50) + 'px';
+            
+            emojiContainer.appendChild(emoji);
+            emojis.push({
+                element: emoji,
+                x: parseFloat(emoji.style.left),
+                y: parseFloat(emoji.style.top),
+                vx: (Math.random() - 0.5) * 2, // Random velocity
+                vy: (Math.random() - 0.5) * 2,
+                size: 40
+            });
+        }
+
+        function removeEmoji() {
+            if (emojis.length > 0) {
+                const emoji = emojis.pop();
+                emoji.element.remove();
+            }
+        }
+
+        function syncEmojisToConnections() {
+            // Remove excess emojis if we have more than connections
+            while (emojis.length > activeConnections) {
+                removeEmoji();
+            }
+            
+            // Add emojis if we have fewer than connections
+            while (emojis.length < activeConnections) {
+                createEmoji();
+            }
+        }
+
+        function updateEmojis() {
+            emojis.forEach(emoji => {
+                // Update position
+                emoji.x += emoji.vx;
+                emoji.y += emoji.vy;
+                
+                // Bounce off walls
+                if (emoji.x <= 0 || emoji.x >= window.innerWidth - 50) {
+                    emoji.vx *= -1;
+                    emoji.x = Math.max(0, Math.min(window.innerWidth - 50, emoji.x));
+                }
+                if (emoji.y <= 0 || emoji.y >= window.innerHeight - 50) {
+                    emoji.vy *= -1;
+                    emoji.y = Math.max(0, Math.min(window.innerHeight - 50, emoji.y));
+                }
+                
+                // Apply position
+                emoji.element.style.left = emoji.x + 'px';
+                emoji.element.style.top = emoji.y + 'px';
+            });
+        }
+
+        function boostEmojis() {
+            emojis.forEach(emoji => {
+                // Add random boost
+                emoji.vx += (Math.random() - 0.5) * 10;
+                emoji.vy += (Math.random() - 0.5) * 10;
+                
+                // Add visual effect
+                emoji.element.classList.add('boosted');
+                setTimeout(() => {
+                    emoji.element.classList.remove('boosted');
+                }, 500);
+            });
+        }
+
+        function animate() {
+            updateEmojis();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = function() {
+                statusElement.textContent = 'Connected';
+                statusElement.style.color = '#00ff00';
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Visual.html received:', data);
+                    
+                    if (data.type === 'button_click') {
+                        // Boost emojis when button is clicked
+                        boostEmojis();
+                        
+                    } else if (data.type === 'connection') {
+                        activeConnections++;
+                        syncEmojisToConnections();
+                        
+                    } else if (data.type === 'state_change') {
+                        console.log(`State changed to: ${data.state}`);
+                    }
+                } catch (error) {
+                    console.error('Error parsing message in visual.html:', error);
+                }
+            };
+
+            ws.onclose = function() {
+                statusElement.textContent = 'Disconnected - Reconnecting...';
+                statusElement.style.color = '#ff0000';
+                console.log('WebSocket disconnected');
+                
+                // Remove all emojis when disconnected
+                emojis.forEach(emoji => emoji.element.remove());
+                emojis = [];
+                activeConnections = 0;
+                
+                // Try to reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = function(error) {
+                statusElement.textContent = 'Connection Error';
+                statusElement.style.color = '#ff0000';
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            emojis.forEach(emoji => {
+                emoji.x = Math.min(emoji.x, window.innerWidth - 50);
+                emoji.y = Math.min(emoji.y, window.innerHeight - 50);
+            });
+        });
+
+        // Initialize
+        connectWebSocket();
+        animate();
+
+
+    </script>
+</body>
+</html> 

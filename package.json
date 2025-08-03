@@ -1,0 +1,16 @@
+{
+  "name": "websocket-button-grid",
+  "version": "1.0.0",
+  "description": "4x4 button grid with WebSocket relay",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "keywords": ["websocket", "button", "grid"],
+  "author": "",
+  "license": "MIT"
+} 

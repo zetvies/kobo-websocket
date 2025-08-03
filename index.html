@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4x4 Button Grid</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .grid-button {
+            background-color: #808080;
+            border: none;
+            color: transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .grid-button:hover {
+            background-color: #a0a0a0;
+        }
+
+        .grid-button:active {
+            background-color: #606060;
+        }
+
+        .status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 1000;
+        }
+
+        .pause-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 2000;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        .grid-container.paused {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="status" id="status">Connecting...</div>
+    <div class="pause-message" id="pauseMessage">Kita rehat sejenak</div>
+    <div class="grid-container" id="gridContainer">
+        <button class="grid-button" onclick="sendButtonClick(1)"></button>
+        <button class="grid-button" onclick="sendButtonClick(2)"></button>
+        <button class="grid-button" onclick="sendButtonClick(3)"></button>
+        <button class="grid-button" onclick="sendButtonClick(4)"></button>
+        <button class="grid-button" onclick="sendButtonClick(5)"></button>
+        <button class="grid-button" onclick="sendButtonClick(6)"></button>
+        <button class="grid-button" onclick="sendButtonClick(7)"></button>
+        <button class="grid-button" onclick="sendButtonClick(8)"></button>
+        <button class="grid-button" onclick="sendButtonClick(9)"></button>
+        <button class="grid-button" onclick="sendButtonClick(10)"></button>
+        <button class="grid-button" onclick="sendButtonClick(11)"></button>
+        <button class="grid-button" onclick="sendButtonClick(12)"></button>
+        <button class="grid-button" onclick="sendButtonClick(13)"></button>
+        <button class="grid-button" onclick="sendButtonClick(14)"></button>
+        <button class="grid-button" onclick="sendButtonClick(15)"></button>
+        <button class="grid-button" onclick="sendButtonClick(16)"></button>
+    </div>
+
+    <script>
+        let ws;
+        const statusElement = document.getElementById('status');
+        const pauseMessageElement = document.getElementById('pauseMessage');
+        const gridContainerElement = document.getElementById('gridContainer');
+        let currentState = 'happy';
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = function() {
+                statusElement.textContent = 'Connected';
+                statusElement.style.color = '#00ff00';
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Index.html received:', data);
+                    console.log('Message type:', data.type);
+                    
+                    if (data.type === 'button_click') {
+                        console.log(`Button ${data.buttonNumber} clicked at ${data.timestamp}`);
+                    } else if (data.type === 'state_change') {
+                        currentState = data.state;
+                        console.log(`State changed to: ${data.state}`);
+                        
+                        if (data.state === 'pause') {
+                            pauseMessageElement.style.display = 'block';
+                            gridContainerElement.classList.add('paused');
+                        } else {
+                            pauseMessageElement.style.display = 'none';
+                            gridContainerElement.classList.remove('paused');
+                        }
+                    } else if (data.type === 'connection') {
+                        console.log('Connection message received');
+                    } else {
+                        console.log('Unknown message type:', data.type);
+                    }
+                } catch (error) {
+                    console.error('Error parsing message in index.html:', error);
+                    console.log('Raw message:', event.data);
+                }
+            };
+
+            ws.onclose = function() {
+                statusElement.textContent = 'Disconnected - Reconnecting...';
+                statusElement.style.color = '#ff0000';
+                console.log('WebSocket disconnected');
+                
+                // Try to reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = function(error) {
+                statusElement.textContent = 'Connection Error';
+                statusElement.style.color = '#ff0000';
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function sendButtonClick(buttonNumber) {
+            if (ws && ws.readyState === WebSocket.OPEN && currentState !== 'pause') {
+                const message = {
+                    type: 'button_click',
+                    buttonNumber: buttonNumber
+                };
+                ws.send(JSON.stringify(message));
+                console.log(`Sent button click: ${buttonNumber}`);
+            } else if (currentState === 'pause') {
+                console.log('System is paused');
+            } else {
+                console.log('WebSocket not connected');
+            }
+        }
+
+        // Connect when page loads
+        connectWebSocket();
+    </script>
+</body>
+</html> 
