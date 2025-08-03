@@ -13,7 +13,21 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .grid-container {
+                gap: 4px;
+            }
+            
+            .grid-button {
+                border-width: 1px;
+            }
         }
 
         .grid-container {
@@ -25,19 +39,21 @@
         }
 
         .grid-button {
-            background-color: #808080;
-            border: none;
+            background-color: transparent;
+            border: 2px solid #808080;
             color: transparent;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
         }
 
         .grid-button:hover {
-            background-color: #a0a0a0;
+            background-color: rgba(128, 128, 128, 0.3);
+            border-color: #a0a0a0;
         }
 
         .grid-button:active {
-            background-color: #606060;
+            background-color: rgba(96, 96, 96, 0.5);
+            border-color: #606060;
         }
 
         .status {
@@ -63,18 +79,78 @@
             padding: 40px;
             border-radius: 20px;
             display: none;
+            font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
         }
 
         .grid-container.paused {
             opacity: 0.3;
             pointer-events: none;
         }
+
+        .question-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .question-text {
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+            line-height: 1.4;
+        }
+
+        .yes-button {
+            background-color: transparent;
+            color: #808080;
+            border: 2px solid #808080;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+        }
+
+        .yes-button:hover {
+            background-color: rgba(128, 128, 128, 0.3);
+            border-color: #a0a0a0;
+            color: #a0a0a0;
+        }
+
+        .yes-button:active {
+            background-color: rgba(96, 96, 96, 0.5);
+            border-color: #606060;
+            color: #606060;
+        }
     </style>
 </head>
 <body>
     <div class="status" id="status">Connecting...</div>
+    
+    <!-- Initial question screen -->
+    <div class="question-screen" id="questionScreen">
+        <div class="question-text">Do you want to help her get through this?</div>
+                 <button class="yes-button" onclick="startHelping()">YES</button>
+    </div>
+    
+    <!-- Pause message -->
     <div class="pause-message" id="pauseMessage">Kita rehat sejenak</div>
-    <div class="grid-container" id="gridContainer">
+    
+    <!-- Button grid (initially hidden) -->
+    <div class="grid-container" id="gridContainer" style="display: none;">
         <button class="grid-button" onclick="sendButtonClick(1)"></button>
         <button class="grid-button" onclick="sendButtonClick(2)"></button>
         <button class="grid-button" onclick="sendButtonClick(3)"></button>
@@ -98,12 +174,12 @@
         const statusElement = document.getElementById('status');
         const pauseMessageElement = document.getElementById('pauseMessage');
         const gridContainerElement = document.getElementById('gridContainer');
-        let currentState = 'happy';
+        const questionScreenElement = document.getElementById('questionScreen');
+        let currentState = 'play';
+        let hasStartedHelping = false;
 
         function connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-            ws = new WebSocket(`${protocol}//${host}`);
+            ws = new WebSocket('wss://kobo-websocket.onrender.com/');
 
             ws.onopen = function() {
                 statusElement.textContent = 'Connected';
@@ -123,13 +199,31 @@
                         currentState = data.state;
                         console.log(`State changed to: ${data.state}`);
                         
-                        if (data.state === 'pause') {
-                            pauseMessageElement.style.display = 'block';
-                            gridContainerElement.classList.add('paused');
-                        } else {
-                            pauseMessageElement.style.display = 'none';
-                            gridContainerElement.classList.remove('paused');
-                        }
+                                             if (data.state === 'pause') {
+                         pauseMessageElement.textContent = 'Please wait until the button shows';
+                         pauseMessageElement.style.display = 'block';
+                         gridContainerElement.classList.add('paused');
+                         // Hide buttons when paused
+                         if (hasStartedHelping) {
+                             gridContainerElement.style.display = 'none';
+                         }
+                     } else if (data.state === 'finish') {
+                         pauseMessageElement.textContent = 'Thank you for playing ;)';
+                         pauseMessageElement.style.display = 'block';
+                         gridContainerElement.classList.add('paused');
+                         // Hide buttons when finished
+                         if (hasStartedHelping) {
+                             gridContainerElement.style.display = 'none';
+                         }
+                     } else {
+                         // Play state
+                         pauseMessageElement.style.display = 'none';
+                         gridContainerElement.classList.remove('paused');
+                         // Show buttons when playing and has started helping
+                         if (hasStartedHelping) {
+                             gridContainerElement.style.display = 'grid';
+                         }
+                     }
                     } else if (data.type === 'connection') {
                         console.log('Connection message received');
                     } else {
@@ -157,19 +251,35 @@
             };
         }
 
-        function sendButtonClick(buttonNumber) {
-            if (ws && ws.readyState === WebSocket.OPEN && currentState !== 'pause') {
+        function startHelping() {
+            hasStartedHelping = true;
+            questionScreenElement.style.display = 'none';
+            
+            // Only show buttons if in play state
+            if (currentState === 'play') {
+                gridContainerElement.style.display = 'grid';
+            } else {
+                gridContainerElement.style.display = 'none';
+            }
+        }
+
+                 function sendButtonClick(buttonNumber) {
+             if (ws && ws.readyState === WebSocket.OPEN && currentState === 'play' && hasStartedHelping) {
                 const message = {
                     type: 'button_click',
                     buttonNumber: buttonNumber
                 };
                 ws.send(JSON.stringify(message));
                 console.log(`Sent button click: ${buttonNumber}`);
-            } else if (currentState === 'pause') {
-                console.log('System is paused');
-            } else {
-                console.log('WebSocket not connected');
-            }
+                         } else if (currentState === 'pause') {
+                 console.log('System is paused');
+             } else if (currentState === 'finish') {
+                 console.log('Game is finished');
+             } else if (!hasStartedHelping) {
+                 console.log('Haven\'t started helping yet');
+             } else {
+                 console.log('WebSocket not connected');
+             }
         }
 
         // Connect when page loads

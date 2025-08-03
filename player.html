@@ -159,23 +159,23 @@
             transform: scale(1.05);
         }
 
-        .toggle-button.happy {
-            background-color: #ffd700;
-            border-color: #ffed4e;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .toggle-button.dark {
-            background-color: #2c3e50;
-            border-color: #34495e;
-            box-shadow: 0 0 10px rgba(44, 62, 80, 0.5);
-        }
-
-        .toggle-button.pause {
-            background-color: #e74c3c;
-            border-color: #c0392b;
-            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-        }
+                 .toggle-button.play {
+             background-color: #27ae60;
+             border-color: #2ecc71;
+             box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+         }
+ 
+         .toggle-button.pause {
+             background-color: #e74c3c;
+             border-color: #c0392b;
+             box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+         }
+ 
+         .toggle-button.finish {
+             background-color: #9b59b6;
+             border-color: #8e44ad;
+             box-shadow: 0 0 10px rgba(155, 89, 182, 0.5);
+         }
 
         .toggle-button:hover {
             background-color: #555;
@@ -190,11 +190,12 @@
         <p>Watch real-time button clicks from the grid</p>
     </div>
 
-    <div class="toggle-container">
-        <button class="toggle-button" id="happyBtn" onclick="setState('happy')">Happy</button>
-        <button class="toggle-button" id="darkBtn" onclick="setState('dark')">Dark</button>
-        <button class="toggle-button" id="pauseBtn" onclick="setState('pause')">Pause</button>
-    </div>
+         <div class="toggle-container">
+         <button class="toggle-button" id="pauseBtn" onclick="setState('pause')">Pause</button>
+         <button class="toggle-button" id="playBtn" onclick="setState('play')">Play</button>
+         <button class="toggle-button" id="finishBtn" onclick="setState('finish')">Finish</button>
+         <button class="toggle-button" onclick="speak('Hello, this is a test of the David voice')" style="background-color: #9b59b6;">Test TTS</button>
+     </div>
 
     <div class="stats">
         <div class="stat-item">
@@ -232,7 +233,7 @@
         let totalClicks = 0;
         let activeConnections = 0;
         let gridCells = [];
-        let currentState = 'happy';
+                 let currentState = 'play';
 
         // Create grid cells
         function createGrid() {
@@ -270,7 +271,123 @@
             }
         }
 
-        // Animate button click
+        // Get soothing message based on button number
+        function getAffirmativeMessage(buttonNumber) {
+            const messages = [
+                "Take a deep breath, everything is going to be alright",
+                "You are safe and loved",
+                "Let go of your worries, just for this moment",
+                "You are stronger than you know",
+                "Peace is within you",
+                "Everything is unfolding exactly as it should",
+                "You are enough, just as you are",
+                "Trust the journey you're on",
+                "You are surrounded by love and light",
+                "Breathe in calm, breathe out tension",
+                "You are healing and growing",
+                "You have everything you need within you",
+                "Let peace wash over you",
+                "You are worthy of all good things",
+                "Everything will be okay in the end",
+                "You are a beautiful soul"
+            ];
+            
+            return messages[(buttonNumber - 1) % messages.length];
+        }
+
+        // Initialize speech synthesis
+        function initSpeechSynthesis() {
+            if ('speechSynthesis' in window) {
+                // Load voices
+                speechSynthesis.getVoices();
+                
+                // Chrome needs a small delay to load voices
+                setTimeout(() => {
+                    console.log('Speech synthesis initialized');
+                    console.log('Available voices:', speechSynthesis.getVoices().length);
+                    
+                    // List all available voices for debugging
+                    const voices = speechSynthesis.getVoices();
+                    voices.forEach((voice, index) => {
+                        console.log(`Voice ${index}: ${voice.name} (${voice.lang})`);
+                    });
+                }, 100);
+            }
+        }
+
+        // Speak text using Web Speech API
+        function speak(text) {
+            console.log('Attempting to speak:', text);
+            
+            if ('speechSynthesis' in window) {
+                try {
+                    // Stop any current speech
+                    speechSynthesis.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.75; // Slower for more soothing effect
+                    utterance.pitch = 0.9; // Lower pitch for calming tone
+                    utterance.volume = 0.7; // Slightly lower volume for gentleness
+                    utterance.lang = 'en-US';
+                    
+                    // Get available voices
+                    const voices = speechSynthesis.getVoices();
+                    console.log('Available voices:', voices.length);
+                    
+                    // Try to find David voice specifically
+                    let selectedVoice = null;
+                    
+                    // First, try to find David voice
+                    selectedVoice = voices.find(voice => 
+                        voice.name.toLowerCase().includes('david') ||
+                        voice.name.toLowerCase().includes('microsoft david')
+                    );
+                    
+                    // If David not found, try to find any male voice
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => 
+                            voice.name.toLowerCase().includes('male') ||
+                            voice.name.toLowerCase().includes('man') ||
+                            voice.name.toLowerCase().includes('boy') ||
+                            voice.name.toLowerCase().includes('alex') ||
+                            voice.name.toLowerCase().includes('daniel') ||
+                            voice.name.toLowerCase().includes('mark') ||
+                            voice.name.toLowerCase().includes('richard')
+                        );
+                    }
+                    
+                    // If no male voice found, use the first available
+                    if (!selectedVoice && voices.length > 0) {
+                        selectedVoice = voices[0];
+                    }
+                    
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                        console.log('Using voice:', selectedVoice.name);
+                    }
+                    
+                    // Add event listeners for debugging
+                    utterance.onstart = () => console.log('Speech started');
+                    utterance.onend = () => console.log('Speech ended');
+                    utterance.onerror = (event) => {
+                        console.error('Speech error:', event.error);
+                        if (event.error === 'not-allowed') {
+                            console.log('Speech blocked - user interaction required. Try clicking the Test TTS button first.');
+                        }
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                    console.log('Speech synthesis.speak() called');
+                    
+                } catch (error) {
+                    console.error('Error in speak function:', error);
+                }
+            } else {
+                console.error('Speech synthesis not supported');
+            }
+        }
+
+        // Animate button click and speak message
         function animateButton(buttonNumber) {
             const cell = document.getElementById(`cell-${buttonNumber}`);
             if (cell) {
@@ -279,6 +396,10 @@
                 
                 // Add active class to clicked cell
                 cell.classList.add('active');
+                
+                // Speak affirmative message
+                const message = getAffirmativeMessage(buttonNumber);
+                speak(message);
                 
                 // Remove active class after animation
                 setTimeout(() => {
@@ -294,9 +415,7 @@
         }
 
         function connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-            ws = new WebSocket(`${protocol}//${host}`);
+            ws = new WebSocket('wss://kobo-websocket.onrender.com/');
 
             ws.onopen = function() {
                 statusElement.textContent = 'Connected';
@@ -318,17 +437,22 @@
                 } else if (data.type === 'connection') {
                     activeConnections++;
                     activeConnectionsElement.textContent = activeConnections;
-                } else if (data.type === 'state_change') {
-                    currentState = data.state;
-                    console.log(`State changed to: ${data.state}`);
-                    
-                    // Update button styles
-                    document.querySelectorAll('.toggle-button').forEach(btn => {
-                        btn.classList.remove('active', 'happy', 'dark', 'pause');
-                    });
-                    const activeButton = document.getElementById(data.state + 'Btn');
-                    activeButton.classList.add('active', data.state);
-                }
+                                 } else if (data.type === 'state_change') {
+                     currentState = data.state;
+                     console.log(`State changed to: ${data.state}`);
+                     
+                     // Update button styles
+                     document.querySelectorAll('.toggle-button').forEach(btn => {
+                         btn.classList.remove('active', 'play', 'pause', 'finish');
+                     });
+                     const activeButton = document.getElementById(data.state + 'Btn');
+                     activeButton.classList.add('active', data.state);
+                     
+                                           // Handle finish state
+                      if (data.state === 'finish') {
+                          // No action needed for finish state in player
+                      }
+                 }
             };
 
             ws.onclose = function() {
@@ -347,36 +471,84 @@
             };
         }
 
-        // Set state function
-        function setState(state) {
-            // Send state to WebSocket
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const message = {
-                    type: 'state_change',
-                    state: state
-                };
-                ws.send(JSON.stringify(message));
-                console.log(`Sent state change: ${state}`);
-                
-                // Update button styles immediately for local feedback
-                document.querySelectorAll('.toggle-button').forEach(btn => {
-                    btn.classList.remove('active', 'happy', 'dark', 'pause');
-                });
-                const activeButton = document.getElementById(state + 'Btn');
-                activeButton.classList.add('active', state);
-            } else {
-                console.log('WebSocket not connected, cannot send state change');
-            }
-        }
+                 // Show thank you message
+         function showThankYouMessage() {
+             // Create overlay
+             const overlay = document.createElement('div');
+             overlay.style.cssText = `
+                 position: fixed;
+                 top: 0;
+                 left: 0;
+                 width: 100vw;
+                 height: 100vh;
+                 background-color: rgba(0, 0, 0, 0.9);
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 z-index: 10000;
+                 font-family: Arial, sans-serif;
+             `;
+             
+             const message = document.createElement('div');
+             message.style.cssText = `
+                 color: white;
+                 font-size: 48px;
+                 font-weight: bold;
+                 text-align: center;
+                 animation: fadeIn 1s ease-in;
+             `;
+             message.textContent = 'Thank you for playing ;)';
+             
+             // Add CSS animation
+             const style = document.createElement('style');
+             style.textContent = `
+                 @keyframes fadeIn {
+                     from { opacity: 0; transform: scale(0.8); }
+                     to { opacity: 1; transform: scale(1); }
+                 }
+             `;
+             document.head.appendChild(style);
+             
+                           overlay.appendChild(message);
+              document.body.appendChild(overlay);
+         }
+ 
+         // Set state function
+         function setState(state) {
+             // Send state to WebSocket
+             if (ws && ws.readyState === WebSocket.OPEN) {
+                 const message = {
+                     type: 'state_change',
+                     state: state
+                 };
+                 ws.send(JSON.stringify(message));
+                 console.log(`Sent state change: ${state}`);
+                 
+                 // Update button styles immediately for local feedback
+                 document.querySelectorAll('.toggle-button').forEach(btn => {
+                     btn.classList.remove('active', 'play', 'pause', 'finish');
+                 });
+                 const activeButton = document.getElementById(state + 'Btn');
+                 activeButton.classList.add('active', state);
+                 
+                                   // Handle finish state locally
+                  if (state === 'finish') {
+                      // No action needed for finish state in player
+                  }
+             } else {
+                 console.log('WebSocket not connected, cannot send state change');
+             }
+         }
 
-        // Initialize
-        createGrid();
-        connectWebSocket();
-        
-        // Set initial state after connection
-        setTimeout(() => {
-            setState('happy');
-        }, 1000);
+                 // Initialize
+         createGrid();
+         connectWebSocket();
+         initSpeechSynthesis();
+         
+                   // Set initial state after connection
+          setTimeout(() => {
+              setState('play');
+          }, 1000);
     </script>
 </body>
 </html> 
