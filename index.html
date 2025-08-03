@@ -101,7 +101,9 @@
         let currentState = 'happy';
 
         function connectWebSocket() {
-            ws = new WebSocket('ws://localhost:8080');
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            ws = new WebSocket(`${protocol}//${host}`);
 
             ws.onopen = function() {
                 statusElement.textContent = 'Connected';

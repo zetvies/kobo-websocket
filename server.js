@@ -1,9 +1,61 @@
 const WebSocket = require('ws');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-// Create WebSocket server on port 8080
-const wss = new WebSocket.Server({ port: 8080 });
+// Create HTTP server
+const server = http.createServer((req, res) => {
+    let filePath = '';
+    
+    // Route handling
+    if (req.url === '/') {
+        filePath = path.join(__dirname, 'landing.html');
+    } else if (req.url === '/index.html') {
+        filePath = path.join(__dirname, 'index.html');
+    } else if (req.url === '/player.html') {
+        filePath = path.join(__dirname, 'player.html');
+    } else if (req.url === '/visual.html') {
+        filePath = path.join(__dirname, 'visual.html');
+    } else {
+        // Default to landing page
+        filePath = path.join(__dirname, 'landing.html');
+    }
+    
+    // Read and serve the file
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.writeHead(404, { 'Content-Type': 'text/html' });
+            res.end('<h1>404 - File Not Found</h1>');
+            return;
+        }
+        
+        // Set appropriate content type
+        const ext = path.extname(filePath);
+        let contentType = 'text/html';
+        
+        if (ext === '.js') {
+            contentType = 'text/javascript';
+        } else if (ext === '.css') {
+            contentType = 'text/css';
+        }
+        
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+    });
+});
 
-console.log('WebSocket server started on port 8080');
+// Create WebSocket server attached to HTTP server
+const wss = new WebSocket.Server({ server });
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+    console.log(`Available routes:`);
+    console.log(`- http://localhost:${PORT}/ (landing page)`);
+    console.log(`- http://localhost:${PORT}/index.html (controller)`);
+    console.log(`- http://localhost:${PORT}/player.html (dashboard)`);
+    console.log(`- http://localhost:${PORT}/visual.html (visual display)`);
+});
 
 // Store all connected clients
 const clients = new Set();

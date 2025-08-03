@@ -1,14 +1,15 @@
-# WebSocket Button Grid
+# WebSocket Button Grid System
 
-A 4x4 full-screen button grid that sends button clicks through WebSocket to relay messages between clients.
+A complete interactive system with a 4x4 button grid, real-time WebSocket communication, and multiple visual interfaces.
 
 ## Features
 
-- Full-screen 4x4 button grid
-- Grey buttons over black background
-- WebSocket communication for real-time button click relay
-- Connection status indicator
-- Automatic reconnection on disconnect
+- **Controller**: Full-screen 4x4 button grid with grey buttons over black background
+- **Dashboard**: Real-time monitoring with state control (Happy/Dark/Pause)
+- **Visual Display**: Animated emojis that respond to button clicks and connections
+- **WebSocket Communication**: Real-time message relay between all clients
+- **State Management**: System-wide state control with pause functionality
+- **Responsive Design**: Works on desktop and mobile devices
 
 ## Setup
 
@@ -17,27 +18,46 @@ A 4x4 full-screen button grid that sends button clicks through WebSocket to rela
 npm install
 ```
 
-2. Start the WebSocket server:
+2. Start the server:
 ```bash
 npm start
 ```
 
-3. Open `index.html` in your web browser
+3. Open your browser and navigate to the server URL
+
+## Available Views
+
+- **Landing Page** (`/`) - Overview and navigation to all views
+- **Controller** (`/index.html`) - Full-screen button grid for interaction
+- **Dashboard** (`/player.html`) - Monitoring and state control panel
+- **Visual Display** (`/visual.html`) - Animated emoji visualization
 
 ## How it works
 
-- The WebSocket server runs on port 8080
+- The server hosts all HTML files and provides WebSocket communication
 - When a button is clicked, it sends the button number (1-16) to the server
-- The server relays the message to all connected clients
-- Each client receives the button click with timestamp
-- Connection status is displayed in the top-left corner
+- The server relays messages to all connected clients
+- State changes (Happy/Dark/Pause) affect all connected clients
+- Visual display shows animated emojis based on active connections
 
 ## Files
 
-- `server.js` - WebSocket server that relays messages
-- `index.html` - Client-side button grid with WebSocket connection
+- `server.js` - HTTP and WebSocket server that hosts all files
+- `landing.html` - Landing page with navigation
+- `index.html` - Button grid controller
+- `player.html` - Dashboard with monitoring and controls
+- `visual.html` - Animated emoji display
 - `package.json` - Node.js dependencies and scripts
+
+## Deployment
+
+This system is ready for deployment on platforms like Render:
+
+1. Connect your repository to Render
+2. Set the build command: `npm install`
+3. Set the start command: `npm start`
+4. Deploy!
 
 ## Multiple Clients
 
-You can open multiple browser windows/tabs with the HTML file to see real-time button clicks being relayed between all connected clients. 
+Open multiple browser windows/tabs to see real-time interaction between different views. Each view provides a unique perspective on the same WebSocket communication system. 

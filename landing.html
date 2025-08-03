@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Grid System</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+            color: #4ecdc4;
+        }
+
+        .description {
+            font-size: 18px;
+            margin-bottom: 40px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .link-card {
+            background-color: #222;
+            padding: 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            border: 2px solid #333;
+        }
+
+        .link-card:hover {
+            background-color: #333;
+            border-color: #4ecdc4;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .link-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .link-description {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Button Grid System</h1>
+        <div class="description">
+            Interactive 4x4 button grid with real-time WebSocket communication and visual feedback.
+        </div>
+        
+        <div class="links">
+            <a href="/index.html" class="link-card">
+                <div class="link-title">🎮 Controller</div>
+                <div class="link-description">Full-screen 4x4 button grid. Click buttons to send signals through WebSocket.</div>
+            </a>
+            
+            <a href="/player.html" class="link-card">
+                <div class="link-title">📊 Player Dashboard</div>
+                <div class="link-description">Monitor button clicks, control system states (Happy/Dark/Pause), and view real-time statistics.</div>
+            </a>
+            
+            <a href="/visual.html" class="link-card">
+                <div class="link-title">✨ Visual Display</div>
+                <div class="link-description">Animated emojis that represent active connections and react to button clicks with amplified movement.</div>
+            </a>
+        </div>
+        
+        <div class="status">
+            💡 Tip: Open multiple browser windows to see real-time interaction between different views!
+        </div>
+    </div>
+</body>
+</html> 
